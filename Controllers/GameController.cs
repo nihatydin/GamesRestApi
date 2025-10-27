@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using GamesRestApi.Data;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace GamesRestApi.Controllers
 {
@@ -8,93 +10,66 @@ namespace GamesRestApi.Controllers
     [ApiController]
     public class GameController : ControllerBase
     {
-        static private List<Game> games = new List<Game>
+
+        private readonly GameDbContext _context;
+        public GameController(GameDbContext context)
         {
-            new Game
-            {
-                Id = 1,
-                Title = "The Legend of Zelda: Breath of the Wild",
-                Description = "An open-world adventure game set in the kingdom of Hyrule.",
-                Image = "https://example.com/zelda.jpg",
-                Publisher = "Nintendo",
-                Release = "March 3, 2017"
-            },
-            new Game
-            {
-                Id = 2,
-                Title = "God of War",
-                Description = "An action-adventure game based on Norse mythology.",
-                Image = "https://example.com/godofwar.jpg",
-                Publisher = "Sony Interactive Entertainment",
-                Release = "April 20, 2018"
-            },
-            new Game
-            {
-                Id = 3,
-                Title = "The Legend of Zelda 2",
-                Description = "An open-world adventure game set in the kingdom of Hyrule.",
-                Image = "https://example.com/zelda.jpg",
-                Publisher = "Nintendo",
-                Release = "March 3, 2017"
-            },
-            new Game
-            {
-                Id = 4,
-                Title = "God of War 2",
-                Description = "An action-adventure game based on Norse mythology.",
-                Image = "https://example.com/godofwar.jpg",
-                Publisher = "Sony Interactive Entertainment",
-                Release = "April 20, 2018"
-            }
-        };
+            _context = context;
+        }
 
 
         [HttpGet]
-        public ActionResult<List<Game>> GetAllGames()
+        public async Task<ActionResult<List<Game>>> GetAllGames()
         {
-            return Ok(games);
+            return Ok(await _context.Games.ToListAsync());
         }
         [HttpGet("{id}")]
-        public ActionResult<Game> GetGameById(int id)
+        public async Task<ActionResult<Game>> GetGameById(int id)
         {
-            var game = games.FirstOrDefault(g => g.Id == id);
+            var game = await _context.Games.FindAsync(id);
             if (game == null)
-            {
                 return NotFound();
-            }
+
             return Ok(game);
         }
         [HttpPost]
-        public ActionResult<Game> CreateGame(Game newGame)
+        public async Task<ActionResult<Game>> CreateGame(Game newGame)
         {
-            newGame.Id = games.Max(g => g.Id) + 1;
-            games.Add(newGame);
+            if (newGame == null)           
+                return BadRequest();
+
+            _context.Games.Add(newGame);
+            await _context.SaveChangesAsync();
+
             return CreatedAtAction(nameof(GetGameById), new { id = newGame.Id }, newGame);
         }
         [HttpPut("{id}")]
-        public IActionResult UpdateGame(int id, Game updatedGame)
+        public async Task<IActionResult> UpdateGame(int id, Game updatedGame)
         {
-            var game = games.FirstOrDefault(g => g.Id == id);
+            var game = await _context.Games.FindAsync(id);
             if (game == null)
-            {
                 return NotFound();
-            }
+
             game.Title = updatedGame.Title;
             game.Description = updatedGame.Description;
             game.Image = updatedGame.Image;
             game.Publisher = updatedGame.Publisher;
             game.Release = updatedGame.Release;
+
+            await _context.SaveChangesAsync();
+
             return Ok(game);
         }
         [HttpDelete("{id}")]
-        public IActionResult DeleteGame(int id)
+        public async Task<IActionResult> DeleteGame(int id)
         {
-            var game = games.FirstOrDefault(g => g.Id == id);
+            var game = await _context.Games.FindAsync(id);
             if (game == null)
-            {
                 return NotFound();
-            }
-            games.Remove(game);
+            
+            _context.Games.Remove(game);
+            await _context.SaveChangesAsync();
+
             return NoContent();
         }
     };
