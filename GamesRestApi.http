@@ -1,0 +1,13 @@
+@GamesRestApi_HostAddress = http://localhost:5003
+
+
+GET {{GamesRestApi_HostAddress}}/api/Game/
+Accept: application/json
+
+###
+
+GET {{GamesRestApi_HostAddress}}/api/Game/4
+Accept: application/json
+
+###
+
